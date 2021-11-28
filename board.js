@@ -58,6 +58,7 @@ class Canvas {
     state;
     hangboard = new Hangboard();
     padding = 0.02;
+    border = 0.1;
     editor;
 
     constructor() {
@@ -88,6 +89,7 @@ class Canvas {
     draw() {
         console.log("draw called");
         this.context.clearRect(0,0,this.width,this.height);
+        this.drawBoard();
         if(this.board_image) this.context.drawImage(this.board_image, 0, 0, this.width, this.height);
         this.drawHangs();
     }
@@ -96,11 +98,17 @@ class Canvas {
         console.log("drawHangs called");
         const px = this.padding * this.width;
         const py = this.padding * this.height;
+        const mx = this.border * this.width;
+        const my = this.border * this.height;
         for(const [i, hang] of this.hangboard.hangs.entries()) {
-            const rect = hang.scaled_size(this.width, this.height, px, py);
+            let rect = hang.scaled_size(this.width - 2*mx, this.height - 2*my, px, py);
+            rect[0] += mx;
+            rect[1] += my;
             console.log(rect);
             roundedRect(this.context, ...rect, px*2);
-            const center = hang.scaled_center(this.width, this.height);
+            const center = hang.scaled_center(this.width-2*mx, this.height-2*my);
+            center[0] += mx;
+            center[1] += my;
 
             let font_height = rect[3]*0.6;
             this.context.font = `${font_height}px Courier New`;
@@ -112,6 +120,10 @@ class Canvas {
             }
             this.context.fillText(i, center[0] - text_width/2, center[1] + font_height/4);
         }
+    }
+
+    drawBoard() {
+        roundedRect(this.context, 0, 0, this.width, this.height, 10);
     }
 
     setHangs() {
