@@ -26,7 +26,6 @@ class Hangboard {
     update(str) {
         this.hangs = [];
         let rows = str.split('\n');
-        console.log(rows);
         let total_height = rows.length;
         let y = 0;
         let height = 1/total_height;
@@ -42,7 +41,6 @@ class Hangboard {
             }
             y += height;
         }
-        console.log(this.hangs);
     }
 
     get size() {
@@ -60,6 +58,7 @@ class Canvas {
     padding = 0.02;
     border = 0.1;
     editor;
+    texture;
 
     constructor() {
         console.log("constructor called");
@@ -67,17 +66,20 @@ class Canvas {
         this.container = document.getElementById('board-container');
         this.canvas = document.getElementById('board');
         this.context = this.canvas.getContext('2d');
-        this.board_image = new Image();
-        //this.board_image.src = 'hangboard.png';
+        const board_image = new Image();
+        board_image.src = 'balsa.jpg';
         window.addEventListener('resize', this.resize.bind(this));
-        this.board_image.addEventListener('load', this.resize.bind(this), false);
+        board_image.addEventListener('load', function() {
+            console.log(this);
+            this.texture = this.context.createPattern(board_image, 'repeat');
+            this.draw();
+        }.bind(this), false);
         this.setHangs();
         this.resize();
     }
 
     resize() {
         console.log("resize called");
-        console.log(this);
         this.canvas.width = this.container.offsetWidth;
         this.canvas.height = this.container.offsetHeight;
         this.draw();
@@ -104,7 +106,6 @@ class Canvas {
             let rect = hang.scaled_size(this.width - 2*mx, this.height - 2*my, px, py);
             rect[0] += mx;
             rect[1] += my;
-            console.log(rect);
             roundedRect(this.context, ...rect, px*2);
             const center = hang.scaled_center(this.width-2*mx, this.height-2*my);
             center[0] += mx;
@@ -124,6 +125,8 @@ class Canvas {
 
     drawBoard() {
         roundedRect(this.context, 0, 0, this.width, this.height, 10);
+        this.context.fillStyle = this.texture;
+        this.context.fill();
     }
 
     setHangs() {
