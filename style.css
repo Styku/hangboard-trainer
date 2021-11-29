@@ -24,4 +24,8 @@
 
 #timer {
     grid-column-end: 2 span;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 9vw;
+    font-family: 'Courier New', Courier, monospace;
 }
