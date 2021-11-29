@@ -1,14 +1,125 @@
+const trainingPlan = {
+    name: "Test plan",
+    hangboard: "vv vv vv == vv vv vv\n= = == === == = =\n== == == == == == ==\n== == == == == == ==\n== == == == == == ==",
+    steps: [
+        {
+            type: "rest",
+            name: "Prepare",
+            duration: 15
+        },
+        {
+            type: "set",
+            name: "Set 1",
+            reps: 4,
+            holds: [15, 19],
+            rep_rest: 30,
+            set_rest: 120,
+            duration: 10,
+            quantity: 3
+        }
+    ]
+}
+
+class TrainingPlayer {
+    plan;
+    canvas;
+    timer;
+    current_step;
+    steps = [];
+    active_step = 0;
+    training;
+    playing = false;
+    paused = false;
+    pausedAt;
+
+    constructor(canvas, timer) {
+        this.canvas = canvas;
+        this.timer = timer;
+        this.training = document.getElementById('training');
+    }
+
+    load(plan) {
+        this.plan = plan;
+        for(const step of this.plan.steps) {
+            if(step.type === "rest") {
+                this.steps.push({name: step.name, duration: step.duration, holds: []});
+            } else if(step.type === "set") {
+                for(let set_nb = 0; set_nb < step.quantity; set_nb++) {
+                    for(let rep_nb = 0; rep_nb < step.reps; rep_nb++) {
+                        this.steps.push({name: `Rep ${rep_nb + 1}`, duration: step.duration, holds: step.holds});
+                        if(rep_nb + 1 < step.reps) {
+                            this.steps.push({name: `Rest`, duration: step.rep_rest, holds: []});
+                        }
+                    }
+                    if(set_nb + 1 < step.quantity) {
+                        this.steps.push({name: `Set ${set_nb + 1} - rest`, duration: step.set_rest, holds: []});
+                    }
+                }
+            }
+        }
+        console.log(this.steps);
+    }
+
+    start() {
+        if(this.playing) {
+            this.playing = false;
+            this.paused = true;
+            this.pausedAt = this.timer.timeLeft();
+            clearInterval(this.timer.handle);
+            this.active_step--;
+            return;
+        }
+        this.playing = true;
+        this.play();
+    }
+
+    play() {
+        console.log("calling play")
+
+        if(this.active_step >= this.steps.length) {
+            this.active_step = 0;
+            return;
+        }
+        this.training.innerHTML = this.renderPlan();
+        const s = this.steps[this.active_step];
+        this.canvas.active_holds = s.holds;
+
+        if(this.paused) {
+            this.timer.start(this.pausedAt, this.play.bind(this));
+            this.paused = false;
+        } else {
+            this.timer.start(s.duration*1000, this.play.bind(this));
+        }
+        this.active_step++;
+    }
+
+    renderPlan() {
+        let str = "";
+        for(let [i, step] of this.steps.entries()) {
+            let state = this.active_step == i ? "active" : "inactive";
+            str += `<li class="${state}">${step.name} - ${step.duration}"</li>`;
+        }
+        return str;
+    }
+}
+
 class Timer {
     start_timestamp;
     display_element;
     handle;
+    callback;
+    paused;
 
     constructor(display_element) {
         this.display_element = document.getElementById(display_element);
-        this.display();
+        this.update();
     }
 
-    display() {
+    timeLeft() {
+        return this.start_timestamp.getTime() - (new Date()).getTime();
+    }
+
+    update() {
         let time_passed = 0;
         if(this.start_timestamp) {
             time_passed = this.start_timestamp.getTime() - (new Date()).getTime();
@@ -16,27 +127,36 @@ class Timer {
         if(time_passed < 0 ) {
             time_passed = 0;
         }
-        const ms = String(time_passed % 1000).padStart(3, '0');
-        time_passed = Math.floor(time_passed/1000);
-        const s = String(time_passed % 60).padStart(2, '0');
-        time_passed = Math.floor(time_passed/60);
-        const m = String(time_passed % 60).padStart(2, '0');
-        time_passed = Math.floor(time_passed/24);
-        const h = String(time_passed % 24).padStart(2, '0');
+        let time_breakdown = time_passed;
+        const ms = String(time_breakdown % 1000).padStart(3, '0');
+        time_breakdown = Math.floor(time_breakdown/1000);
+        const s = String(time_breakdown % 60).padStart(2, '0');
+        time_breakdown = Math.floor(time_breakdown/60);
+        const m = String(time_breakdown % 60).padStart(2, '0');
+        time_breakdown = Math.floor(time_breakdown/24);
+        const h = String(time_breakdown % 24).padStart(2, '0');
         const time_string = `${h}:${m}:${s}:${ms}`;
 
         this.display_element.innerText = time_string;
 
-        if(time_passed < 0 && this.handle) {
+        if(time_passed <= 0 && this.handle) {
             time_passed = 0;
             clearInterval(this.handle);
+            if(this.callback){
+                this.callback();
+            }
         }
     }
 
-    start(time) {
+    start(time, callback) {
         this.start_timestamp = new Date();
-        this.start_timestamp.setSeconds(this.start_timestamp.getSeconds() + time);
-        this.handle = setInterval(this.display.bind(this), 5);
+        this.start_timestamp.setMilliseconds(this.start_timestamp.getMilliseconds() + time);
+        this.callback = callback;
+        this.handle = setInterval(this.update.bind(this), 6);
+    }
+
+    pause() {
+
     }
 }
 
@@ -103,13 +223,16 @@ class Canvas {
         board_image.src = 'balsa.jpg';
         window.addEventListener('resize', this.resize.bind(this));
         board_image.addEventListener('load', function() {
-            console.log(this);
             this.texture = this.context.createPattern(board_image, 'repeat');
             this.draw();
         }.bind(this), false);
         this.setHangs();
-        this.hangboard.active = [2, 5, 8, 12];
         this.resize();
+    }
+
+    set active_holds(list) {
+        this.hangboard.active = list;
+        this.draw();
     }
 
     resize() {
@@ -154,7 +277,6 @@ class Canvas {
 
         for(const [i, hang] of this.hangboard.hangs.entries()) {
             const rect = this.scale(hang);
-            console.log(this.hangboard.active);
             if(this.hangboard.active.has(i)) {
                 this.context.fillStyle = "rgba(0, 0, 255, 0.2)";
             } else {
@@ -207,12 +329,18 @@ class Canvas {
 
 let canvas;
 let timer;
+let player;
 
 window.onload = function() {
     canvas = new Canvas();
     timer = new Timer('timer');
-    timer.start(20);    
+    player = new TrainingPlayer(canvas, timer);
+    player.load(trainingPlan);
     console.log(canvas);
 }
 
-
+function handlePlay() {
+    player.start();
+    let playButton = document.getElementById('playButton');
+    playButton.style.opacity = player.playing ? 0 : 1;
+}

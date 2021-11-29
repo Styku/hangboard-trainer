@@ -22,10 +22,49 @@
     overflow: hidden;
 }
 
-#timer {
+.top-panel {
     grid-column-end: 2 span;
     vertical-align: middle;
     text-align: center;
     font-size: 9vw;
     font-family: 'Courier New', Courier, monospace;
+    position: relative;
+}
+
+#timer:hover {
+    background-color: #efefef;
+}
+
+#editor {
+    width: 99%;
+    height: 10em;
+    overflow: hidden;
+    resize: none;
+    border: none;
+}
+
+ul .active {
+    background-color: #ddd;
+}
+
+.overlay {
+    position: absolute;
+    top: 20%;
+    left: 25%;
+    background-color:rgba(230,230,230,0.5);
+    background-image: url(play.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    color: #f1f1f1;
+    width: 50%;
+    height: 60%;
+    opacity:0;
+    color: white;
+    font-size: 20px;
+    padding: 20px;
+    text-align: center;
+}
+
+.overlay:hover {
+    opacity: 1;
 }

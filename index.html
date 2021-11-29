@@ -6,17 +6,27 @@
     <body>
         <div class="border">
             <div class="layout">
-                <div id="timer"></div>
+                <div class="top-panel">
+                    <div id="timer"></div>
+                    <div class="overlay" onclick="handlePlay();" id="playButton"></div>
+                </div>
                 <div id="board-container">
                     <canvas id="board"></canvas>
                 </div>
-                <div id="training">
-                    <textarea id="editor" oninput="canvas.setHangs();">
-vv vv vv == vv vv vv
-= = == === == = =
-== == == == == == ==
-== == == == == == ==
-== == == == == == ==</textarea>
+                <div id="training-panel">
+                    <div class="box">
+                        <textarea id="editor" oninput="canvas.setHangs();">
+    vv vv vv == vv vv vv
+    = = == === == = =
+    == == == == == == ==
+    == == == == == == ==
+    == == == == == == ==</textarea>
+                    </div>
+                    <div class="box">
+                       <ul id="training">
+
+                       </ul>
+                    </div>
                 </div>
             </div>
         </div>
